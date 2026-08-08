@@ -1,0 +1,33 @@
+# ConfigMap dans le chart
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-bootstrap
+data:
+  config.toml: |
+    [server.listener.http]
+    bind = ["[::]:8080"]
+    protocol = "http"
+
+    [storage]
+    data = "postgresql"
+    fts = "postgresql"
+    blob = "postgresql"
+    lookup = "postgresql"
+    directory = "internal"
+
+    [store.postgresql]
+    type = "postgresql"
+    host = "stalwart-db-rw"
+    port = 5432
+    database = "stalwart"
+    user = "stalwart"
+    password = "%{env:STALWART_DB_PASSWORD}%"
+
+    [directory.internal]
+    type = "internal"
+    store = "postgresql"
+
+    [tracer.stdout]
+    type = "stdout"
+    level = "info"
