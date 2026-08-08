@@ -41,6 +41,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          args: ["--config", "/opt/stalwart/etc/config.toml"]
           ports:
             - name: http
               containerPort: {{ .Values.stalwart.httpPort }}
