@@ -31,7 +31,12 @@ stalwart:
 
   # Env additionnels. Stalwart supporte l'override de config par variables
   # d'environnement (préfixe STALWART__ selon la doc de ta version - VERIFIER).
-  extraEnv: []
+  extraEnv:
+    - name: STALWART_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: stalwart-db-app
+          key: password
 
 service:
   # Service ClusterIP pour le HTTP uniquement (admin/JMAP via Traefik)
