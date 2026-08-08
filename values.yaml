@@ -1,6 +1,6 @@
 image:
   repository: stalwartlabs/stalwart
-  tag: "v0.16"          # tag mineur conseillé par la doc (suit les patchs, pas les breaking)
+  tag: "v0.16.16"          # tag mineur conseillé par la doc (suit les patchs, pas les breaking)
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -36,7 +36,7 @@ ingress:
   className: traefik
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   host: mail.georgeop.us
   tls:
     enabled: true
