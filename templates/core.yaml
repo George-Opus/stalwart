@@ -35,6 +35,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/stalwart
+            - name: bootstrap
+              mountPath: /bootstrap
       containers:
         - name: stalwart
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -81,6 +83,9 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
+        - name: bootstrap
+          configMap:
+            name: stalwart-bootstrap
         - name: data
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
