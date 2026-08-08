@@ -8,7 +8,8 @@ fullnameOverride: ""
 
 stalwart:
   hostname: "mail.georgeop.us"
-
+  tls:
+    existingSecret: "stalwart-http-tls"
   # URL publique (proxy Traefik devant) - publiée dans les discovery documents
   publicUrl: "https://mail.georgeop.us"
 
