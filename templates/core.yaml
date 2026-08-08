@@ -28,7 +28,7 @@ spec:
       initContainers:
         - name: init-dirs
           image: busybox
-          command: ["sh", "-c", "mkdir -p /opt/stalwart/etc /opt/stalwart/data /opt/stalwart/logs"]
+          command: ["sh", "-c", "mkdir -p /opt/stalwart/etc /opt/stalwart/data /opt/stalwart/logs && [ -f /opt/stalwart/etc/config.toml ] || touch /opt/stalwart/etc/config.toml"]
           securityContext:
             runAsUser: 65534
             runAsGroup: 65534
