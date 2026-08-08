@@ -42,7 +42,7 @@ ingress:
   className: traefik
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   host: mail.georgeop.us
   tls:
     enabled: true
