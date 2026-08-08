@@ -1,0 +1,96 @@
+image:
+  repository: stalwartlabs/stalwart   # VERIFIER: anciennes versions = stalwartlabs/mail-server
+  tag: ""        # défaut: appVersion
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+stalwart:
+  # Hostname principal du serveur mail (doit matcher le PTR / FCrDNS)
+  hostname: "mail.georgeop.us"
+
+  # Ports mail exposés en hostPort (mono-node: préserve l'IP source,
+  # indispensable pour la réputation SMTP et les blocklists).
+  mailPorts:
+    smtp: 25          # réception MX
+    submissions: 465  # envoi clients (TLS implicite)
+    submission: 587   # envoi clients (STARTTLS)
+    imaps: 993        # IMAP TLS
+
+  # Port HTTP interne (admin UI, JMAP, webmail, ACME)
+  httpPort: 8080
+
+  # Certificat TLS pour SMTP/IMAP :
+  # Option 1 (défaut): Stalwart gère lui-même l'ACME -> rien à faire ici,
+  #   config dans l'admin UI (nécessite le port 443 ou HTTP-01 via l'ingress).
+  # Option 2: réutiliser un secret cert-manager monté dans le pod,
+  #   puis déclarer le chemin dans la config Stalwart (admin UI).
+  tls:
+    existingSecret: ""   # ex: "stalwart-tls" (tls.crt/tls.key montés sous /opt/stalwart/etc/certs/)
+
+  # Env additionnels. Stalwart supporte l'override de config par variables
+  # d'environnement (préfixe STALWART__ selon la doc de ta version - VERIFIER).
+  extraEnv: []
+
+service:
+  # Service ClusterIP pour le HTTP uniquement (admin/JMAP via Traefik)
+  port: 8080
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: mail.georgeop.us
+  tls:
+    enabled: true
+    secretName: stalwart-http-tls
+
+persistence:
+  # Données + config + queues + index - CRITIQUE, à sauvegarder dès le jour 1
+  enabled: true
+  storageClass: "local-path"
+  accessModes: [ReadWriteOnce]
+  size: 20Gi
+  # existingClaim: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+
+# NOTE hostPort + securityContext:
+# les ports <1024 en hostPort ne nécessitent PAS de privilèges particuliers
+# côté pod (c'est kube-proxy/CNI qui bind côté hôte), le pod peut rester non-root.
+podSecurityContext:
+  fsGroup: 65534
+
+securityContext:
+  runAsUser: 65534
+  runAsGroup: 65534
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+
+livenessProbe:
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 15
+
+readinessProbe:
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+podLabels: {}
