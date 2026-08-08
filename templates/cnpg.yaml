@@ -1,0 +1,45 @@
+{{- if .Values.cnpg.enabled }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Values.cnpg.clusterName }}
+  labels:
+    app.kubernetes.io/part-of: {{ .Chart.Name }}
+spec:
+  instances: {{ .Values.cnpg.instances }}
+  imageName: {{ .Values.cnpg.imageName }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.cnpg.database }}
+      owner: {{ .Values.cnpg.owner }}
+
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+
+  storage:
+    size: {{ .Values.cnpg.size }}
+    storageClass: {{ .Values.cnpg.storageClass }}
+
+  resources:
+    {{- toYaml .Values.cnpg.resources | nindent 4 }}
+
+  # backup barmanObjectStore : PRIORITAIRE pour ce cluster - c'est du mail.
+  # Décommenter et adapter (même pattern que vaultwarden-db) :
+  # backup:
+  #   retentionPolicy: "14d"
+  #   barmanObjectStore:
+  #     destinationPath: s3://backups/stalwart-db
+  #     endpointURL: https://s3.example.com
+  #     s3Credentials:
+  #       accessKeyId:
+  #         name: stalwart-db-backup-s3
+  #         key: ACCESS_KEY_ID
+  #       secretAccessKey:
+  #         name: stalwart-db-backup-s3
+  #         key: SECRET_ACCESS_KEY
+  #     wal:
+  #       compression: gzip
+{{- end }}
