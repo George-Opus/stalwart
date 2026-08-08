@@ -25,6 +25,16 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-dirs
+          image: busybox
+          command: ["sh", "-c", "mkdir -p /opt/stalwart/etc /opt/stalwart/data /opt/stalwart/logs"]
+          securityContext:
+            runAsUser: 65534
+            runAsGroup: 65534
+          volumeMounts:
+            - name: data
+              mountPath: /opt/stalwart
       containers:
         - name: stalwart
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
