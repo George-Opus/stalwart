@@ -82,12 +82,12 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-       {{- if .Values.stalwart.tls.existingSecret }}
-       - name: tls
-         secret:
-           secretName: {{ .Values.stalwart.tls.existingSecret }}
-           defaultMode: 0440
-       {{- end }}
+        {{- if .Values.stalwart.tls.existingSecret }}
+        - name: tls
+          secret:
+            secretName: {{ .Values.stalwart.tls.existingSecret }}
+            defaultMode: 0440
+        {{- end }}
         - name: config
           {{- if .Values.persistence.config.enabled }}
           persistentVolumeClaim:
