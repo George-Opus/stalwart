@@ -1,6 +1,6 @@
 image:
   repository: stalwartlabs/stalwart   # VERIFIER: anciennes versions = stalwartlabs/mail-server
-  tag: ""        # défaut: appVersion
+  tag: "v0.16.16"        # défaut: appVersion
   pullPolicy: IfNotPresent
 
 nameOverride: ""
