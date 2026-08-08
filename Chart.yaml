@@ -1,8 +1,0 @@
-apiVersion: v2
-name: stalwart
-description: Stalwart mail server (SMTP/IMAP/JMAP/webadmin) - chart maison pour georgeop.us
-type: application
-version: 0.1.0
-appVersion: "0.16.16"   # VERIFIER la derniere release sur github.com/stalwartlabs/stalwart
-sources:
-  - https://github.com/stalwartlabs/stalwart
