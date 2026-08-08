@@ -1,0 +1,174 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "stalwart.fullname" . }}
+  labels:
+    {{- include "stalwart.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "stalwart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "stalwart.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: stalwart
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.stalwart.httpPort }}
+              protocol: TCP
+            - name: smtp
+              containerPort: {{ .Values.stalwart.mailPorts.smtp }}
+              hostPort: {{ .Values.stalwart.mailPorts.smtp }}
+              protocol: TCP
+            - name: submissions
+              containerPort: {{ .Values.stalwart.mailPorts.submissions }}
+              hostPort: {{ .Values.stalwart.mailPorts.submissions }}
+              protocol: TCP
+            - name: submission
+              containerPort: {{ .Values.stalwart.mailPorts.submission }}
+              hostPort: {{ .Values.stalwart.mailPorts.submission }}
+              protocol: TCP
+            - name: imaps
+              containerPort: {{ .Values.stalwart.mailPorts.imaps }}
+              hostPort: {{ .Values.stalwart.mailPorts.imaps }}
+              protocol: TCP
+          env:
+            - name: STALWART_PUBLIC_URL
+              value: {{ .Values.stalwart.publicUrl | quote }}
+            {{- if .Values.stalwart.recoveryAdmin.existingSecret }}
+            - name: STALWART_RECOVERY_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.stalwart.recoveryAdmin.existingSecret }}
+                  key: RECOVERY_ADMIN
+            {{- end }}
+            {{- with .Values.stalwart.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/stalwart
+            - name: data
+              mountPath: /var/lib/stalwart
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          {{- if .Values.persistence.config.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "stalwart.fullname" . }}-config
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: data
+          {{- if .Values.persistence.data.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "stalwart.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "stalwart.fullname" . }}
+  labels:
+    {{- include "stalwart.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "stalwart.selectorLabels" . | nindent 4 }}
+---
+{{- range $name, $cfg := .Values.persistence }}
+{{- if $cfg.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "stalwart.fullname" $ }}-{{ $name }}
+  labels:
+    {{- include "stalwart.labels" $ | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    {{- toYaml $cfg.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ $cfg.size }}
+  {{- with $cfg.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "stalwart.fullname" . }}
+  labels:
+    {{- include "stalwart.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "stalwart.fullname" . }}
+                port:
+                  name: http
+{{- end }}
